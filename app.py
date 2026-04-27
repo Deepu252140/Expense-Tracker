@@ -4,10 +4,15 @@ import os
 from datetime import datetime
 
 app = Flask(__name__)
+with app.app_context():
+    init_db()
 app.secret_key = 'your_secret_key'  # Change this in production
 
 DATABASE = 'expenses.db'
+import os
 
+if not os.path.exists(DATABASE):
+    open(DATABASE, 'w').close()
 def get_db():
     db = sqlite3.connect(DATABASE)
     db.row_factory = sqlite3.Row
