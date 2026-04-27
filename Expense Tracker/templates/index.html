@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker - Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <h1>Expense Tracker</h1>
+            <ul>
+                <li><a href="{{ url_for('index') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('add_expense') }}">Add Expense</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="dashboard">
+            <div class="summary">
+                <div class="total-expenses">
+                    <h2>Total Expenses</h2>
+                    <p>₹{{ "%.2f"|format(total) }}</p>
+                </div>
+                <div class="category-totals">
+                    <h2>Category Totals</h2>
+                    <ul>
+                        {% for cat in categories %}
+                        <li>{{ cat.category }}: ₹{{ "%.2f"|format(cat.total_amount) }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="expenseChart"></canvas>
+            </div>
+        </div>
+
+        <div class="filter-form">
+            <h2>Filter Expenses</h2>
+            <form action="{{ url_for('filter_expenses') }}" method="post">
+                <select name="category">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.category }}">{{ cat.category }}</option>
+                    {% endfor %}
+                </select>
+                <input type="date" name="date_from" placeholder="From Date">
+                <input type="date" name="date_to" placeholder="To Date">
+                <button type="submit">Filter</button>
+            </form>
+        </div>
+
+        <div class="expenses-table">
+            <h2>All Expenses</h2>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for message in messages %}
+                <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Amount</th>
+                        <th>Category</th>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expense in expenses %}
+                    <tr>
+                        <td>₹{{ "%.2f"|format(expense['amount']) }}</td>
+                        <td>{{ expense['category'] }}</td>
+                        <td>{{ expense['date'] }}</td>
+                        <td>{{ expense['description'] or 'N/A' }}</td>
+                        <td><a href="{{ url_for('delete_expense', id=expense['id']) }}" onclick="return confirm('Are you sure?')">Delete</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('expenseChart').getContext('2d');
+        const categories = {{ categories | tojson }};
+        const data = {
+            labels: categories.map(cat => cat.category),
+            datasets: [{
+                label: 'Expenses by Category',
+                data: categories.map(cat => cat.total_amount),
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                ],
+                borderWidth: 1
+            }]
+        };
+        const config = {
+            type: 'pie',
+            data: data,
+        };
+        new Chart(ctx, config);
+    </script>
+</body>
+</html>
